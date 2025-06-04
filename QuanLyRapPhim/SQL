@@ -1,0 +1,106 @@
+CREATE TABLE Users (
+    user_id INT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password VARCHAR(100) NOT NULL,
+    role ENUM('admin', 'staff') DEFAULT 'staff',
+    full_name VARCHAR(100),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE Movies (
+    movie_id INT PRIMARY KEY AUTO_INCREMENT,
+    title VARCHAR(100) NOT NULL,
+    genre VARCHAR(50),
+    duration INT, -- phút
+    description TEXT,
+    trailer_url VARCHAR(255),
+    release_date DATE
+);
+CREATE TABLE Rooms (
+    room_id INT PRIMARY KEY AUTO_INCREMENT,
+    room_name VARCHAR(50) NOT NULL,
+    total_seats INT
+);
+CREATE TABLE Seats (
+    seat_id INT PRIMARY KEY AUTO_INCREMENT,
+    room_id INT,
+    seat_number VARCHAR(10), 
+    status ENUM('available', 'booked', 'occupied') DEFAULT 'available',
+    FOREIGN KEY (room_id) REFERENCES Rooms(room_id)
+);
+CREATE TABLE Showtimes (
+    showtime_id INT PRIMARY KEY AUTO_INCREMENT,
+    movie_id INT,
+    room_id INT,
+    show_date DATE,
+    start_time TIME,
+    end_time TIME,
+    FOREIGN KEY (movie_id) REFERENCES Movies(movie_id),
+    FOREIGN KEY (room_id) REFERENCES Rooms(room_id)
+);
+
+CREATE TABLE Tickets (
+    ticket_id INT PRIMARY KEY AUTO_INCREMENT,
+    showtime_id INT,
+    seat_id INT,
+    price DECIMAL(10, 2),
+    status ENUM('available', 'booked', 'sold') DEFAULT 'available',
+    FOREIGN KEY (showtime_id) REFERENCES Showtimes(showtime_id),
+    FOREIGN KEY (seat_id) REFERENCES Seats(seat_id)
+);
+
+CREATE TABLE Customers (
+    customer_id INT PRIMARY KEY AUTO_INCREMENT,
+    full_name VARCHAR(100),
+    email VARCHAR(100),
+    phone VARCHAR(20),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE Bookings (
+    booking_id INT PRIMARY KEY AUTO_INCREMENT,
+    customer_id INT,
+    user_id INT,
+    booking_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    status ENUM('pending', 'confirmed', 'cancelled') DEFAULT 'pending',
+    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id),
+    FOREIGN KEY (user_id) REFERENCES Users(user_id)
+);
+CREATE TABLE BookingDetails (
+    booking_detail_id INT PRIMARY KEY AUTO_INCREMENT,
+    booking_id INT,
+    ticket_id INT,
+    unit_price DECIMAL(10, 2),
+    FOREIGN KEY (booking_id) REFERENCES Bookings(booking_id),
+    FOREIGN KEY (ticket_id) REFERENCES Tickets(ticket_id)
+);
+CREATE TABLE Payments (
+    payment_id INT PRIMARY KEY AUTO_INCREMENT,
+    booking_id INT,
+    amount DECIMAL(10, 2),
+    payment_method ENUM('cash', 'credit_card', 'momo', 'bank_transfer'),
+    payment_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (booking_id) REFERENCES Bookings(booking_id)
+);
+CREATE TABLE Promotions (
+    promotion_id INT PRIMARY KEY AUTO_INCREMENT,
+    code VARCHAR(20) UNIQUE,
+    description TEXT,
+    discount_percent INT, 
+    valid_from DATE,
+    valid_to DATE,
+    min_total DECIMAL(10,2)
+);
+CREATE TABLE PromotionDetails (
+    promo_detail_id INT PRIMARY KEY AUTO_INCREMENT,
+    promotion_id INT,
+    booking_id INT,
+    FOREIGN KEY (promotion_id) REFERENCES Promotions(promotion_id),
+    FOREIGN KEY (booking_id) REFERENCES Bookings(booking_id)
+);
+
+CREATE EVENT IF NOT EXISTS delete_old_showtimes
+ON SCHEDULE EVERY 1 DAY
+STARTS CURRENT_TIMESTAMP
+DO
+  DELETE FROM Showtimes
+  WHERE show_date < CURDATE();
+image.png
